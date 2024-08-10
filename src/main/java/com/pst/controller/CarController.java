@@ -21,11 +21,16 @@ public class CarController {
     private CarService carService;
 
     @GetMapping("/cars/search")
-    public List<Car> searchCars(@RequestParam(required = false) Double length,
+    public ResponseEntity searchCars(@RequestParam(required = false) Double length,
                                 @RequestParam(required = false) Double weight,
                                 @RequestParam(required = false) Double velocity,
                                 @RequestParam(required = false) String color) {
-        return carService.searchCars(length, weight, velocity, color);
+        List<Car> cars = carService.searchCars(length, weight, velocity, color);
+        if (cars!=null & cars.size()>0) {
+            return new ResponseEntity<>(cars, HttpStatus.OK);
+        } else {
+            return new ResponseEntity("No cars available", HttpStatus.NOT_FOUND);
+        }
     }
 
     @GetMapping("/cars/export/xml")
@@ -34,12 +39,14 @@ public class CarController {
                                                   @RequestParam(required = false) Double velocity,
                                                   @RequestParam(required = false) String color) throws JAXBException, JAXBException {
         List<Car> cars = carService.searchCars(length, weight, velocity, color);
-        String xmlContent = carService.convertCarsToXml(cars);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cars.xml");
-        headers.add(HttpHeaders.CONTENT_TYPE, "application/xml");
-
-        return new ResponseEntity<>(xmlContent, headers, HttpStatus.OK);
+        if(cars!=null & cars.size()>0){
+            String xmlContent = carService.convertCarsToXml(cars);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cars.xml");
+            headers.add(HttpHeaders.CONTENT_TYPE, "application/xml");
+            return new ResponseEntity<>(xmlContent, headers, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("No cars available", HttpStatus.NOT_FOUND);
+        }
     }
 }
